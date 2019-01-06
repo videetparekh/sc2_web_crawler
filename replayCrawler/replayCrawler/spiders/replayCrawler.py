@@ -1,18 +1,17 @@
-import scrapy
+
 from selenium import webdriver
 from time import sleep
-import urllib2
-import os
 
-class replaySpider(scrapy.Spider):
-    name = "replaySpider"
-    driver = webdriver.Firefox(executable_path="C:\geckodriver\geckodriver-v0.23.0-win64\geckodriver.exe")
-    url_init = "https://gggreplays.com/matches#?page=1"
 
-    @staticmethod
-    def ggg_url_generator():
-        url_init = "https://gggreplays.com/matches#?page=1"
-        return url_init
+class replaySpider:
+    firefox_profile = webdriver.FirefoxProfile()
+    firefox_profile.set_preference('permissions.default.image', 2)
+    firefox_profile.set_preference('dom.ipc.plugins.enabled.libflashplayer.so', 'false')
+    driver = webdriver.Firefox(executable_path="C:\geckodriver\geckodriver-v0.23.0-win64\geckodriver.exe", firefox_profile=firefox_profile)     # Replace the path with the local geckodriver path on your system
+    download_driver = None
+
+    def init_download_driver(self):
+        self.download_driver = webdriver.Firefox(executable_path="C:\geckodriver\geckodriver-v0.23.0-win64\geckodriver.exe", firefox_profile=self.firefox_profile)      # Replace the path with the local geckdriver path on your system
 
     def parse(self, response):
         self.driver.get(response)
@@ -31,24 +30,17 @@ class replaySpider(scrapy.Spider):
         except:
             return None
 
-    def download_game(self, page_url):
-        download_driver = webdriver.Firefox(executable_path="C:\geckodriver\geckodriver-v0.23.0-win64\geckodriver.exe")
-        download_driver.get(page_url)
-        download_element = download_driver.find_elements_by_xpath(".//a[contains(@href,'/matches/')]")
-        download_url = download_element[0].get_attribute("href")
-        replay_name = "ggtracker_"+(page_url.split("/")[-1])
-        file_name = replay_name + ".SC2Replay"
-        folder_path = "d:/Users/Administrator/Desktop/StarCraft II Research/Replays/" + replay_name
-        file_path = folder_path + "/" + file_name
-
-        get_file = urllib2.urlopen(download_url)
-        file_data = get_file.read()
-
-        if not os.path.exists(folder_path):
-            os.makedirs(folder_path)
-        with open(file_path, 'wb') as f:
-            f.write(file_data)
-        download_driver.close()
+    def match_download_scraper(self, page_url):
+        self.download_driver.get(page_url)
+        try:
+            download_element = self.download_driver.find_element_by_xpath(".//a[contains(@href,'/matches/')]")
+            download_url = download_element.get_attribute("href")
+        except:
+            download_url = ''
+        return download_url
 
     def close_driver(self):
         self.driver.close()
+
+    def close_download_driver(self):
+        self.download_driver.close()
